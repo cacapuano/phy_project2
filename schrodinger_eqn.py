@@ -41,17 +41,14 @@ class QuantumSystem:
 
 # Define the potential function
 def potential_function(x):
-    return np.where((x > -1) & (x < 1), 0, np.inf)  # Infinite potential well
+    return np.where((x > -1) & (x < 1), 0, 1000)  # Infinite potential well
 
 # Create an instance of the QuantumSystem
-quantum_system = QuantumSystem(x_min=-2, x_max=2, num_points=1000, potential=potential_function)
+quantum_system = QuantumSystem(x_min=-1.5, x_max=1.5, num_points=1000, potential=potential_function)
 
 # Solve for energies and wavefunctions
 energies, wavefunctions = quantum_system.solve()
 
-# Print energies
-print("Energies (in arbitrary units):")
-print(energies)
 
 # Plot the wavefunctions
 quantum_system.plot_wavefunctions(wavefunctions)
