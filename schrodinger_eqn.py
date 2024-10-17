@@ -11,16 +11,16 @@ class QuantumSystem:
         self.potential = potential #potential of tritium - use inifinite potential well
         self.x = np.linspace(x_min, x_max, num_points) #positon points
         self.dx = self.x[1] - self.x[0] 
-        self.hbar = 1  # Reduced Planck's constant
+        self.hbar = 1  # value we're using for a reduced planck's constant
         self.mass = 3  # Mass of tritium (3H)
 
         self.hamiltonian = self._construct_hamiltonian() # set hamiltonian function
 
     def _construct_hamiltonian(self):
-        diag = np.diag(self.potential(self.x))  # Potential energy of infinite square well
+        #schrodinger eqn with the mass of tritium, x points, and potential energy
+        diag = np.diag(self.potential(self.x))  # Potential energy of finite square well
         off_diag = np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), -1) + \
-                   np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1)
-        
+                   np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1) 
         return diag + off_diag
 
     def solve(self): #solve eigenvalues using SciPy script eigh
@@ -28,9 +28,8 @@ class QuantumSystem:
         return energies, wavefunctions
 
     def plot_wavefunctions(self, wavefunctions):
-        """Plot the first few wavefunctions."""
         plt.figure(figsize=(10, 6))
-        for i in range(3):  # Plot first three wavefunctions
+        for i in range(3):  # plotting first three wavefunctions
             plt.plot(self.x, wavefunctions[:, i]**2, label=f'n={i+1}')
         plt.title('Probability Density of Wavefunctions')
         plt.xlabel('Position')
@@ -39,17 +38,17 @@ class QuantumSystem:
         plt.grid()
         plt.show()
 
-# Define the potential function
+# potential for a finite square well
+
+# note for me - cannot use infinite for this function, using 1000 for max of potential well makes it act like an infinite square well
 def potential_function(x):
-    return np.where((x > -1) & (x < 1), 0, 1000)  # Infinite potential well
+    return np.where((x > -1) & (x < 1), 0, 1000)  # finite potential well
 
-# Create an instance of the QuantumSystem
+#solve using classes
 quantum_system = QuantumSystem(x_min=-1.5, x_max=1.5, num_points=1000, potential=potential_function)
-
-# Solve for energies and wavefunctions
 energies, wavefunctions = quantum_system.solve()
 
 
-# Plot the wavefunctions
+# plot the wavefunctions
 quantum_system.plot_wavefunctions(wavefunctions)
 
