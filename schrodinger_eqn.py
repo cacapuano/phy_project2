@@ -18,10 +18,14 @@ class QuantumSystem:
 
     def _construct_hamiltonian(self):
         #schrodinger eqn with the mass of tritium, x points, and potential energy
-        diag = np.diag(self.potential(self.x))  # Potential energy of finite square well
+        potential = np.diag(self.potential(self.x))  # Potential energy of finite square well
+        
+        kinetic_energy = (-self.hbar**2 / (2 * self.mass)) * runga_kutta_wavefunction
+        
+        
         off_diag = np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), -1) + \
                    np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1) 
-        return diag + off_diag
+        return potential + off_diag
 
     def solve(self): #solve eigenvalues using SciPy script eigh
         energies, wavefunctions = eigh(self.hamiltonian)
