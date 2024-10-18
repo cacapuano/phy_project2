@@ -1,41 +1,39 @@
-# %% Cell Monte Carlo simulation on tritium decay
+# Monte Carlo simulation on tritium decay
 import numpy as np
 import matplotlib.pyplot as plt
 
 # Constants
-T_HALF = 12.32  # Half-life of tritium in years
-LAMBDA = np.log(2) / T_HALF  # Decay constant
+tou = 12.32
+Lambda = np.log(2) / tou
 
 # Simulation parameters
-initial_nuclei = 1000  # Initial number of tritium nuclei
-time_end = 50  # Total time to simulate in years
-num_trials = 1000  # Number of Monte Carlo trials
+initial_particles = 1000
+end_time = 100
+sampling = 1000 
 
-def monte_carlo_tritium_decay(initial_nuclei, time_end, num_trials):
+def monte_carlo_tritium_decay(initial_particles, end_time, sampling):
     decay_times = []
 
-    for _ in range(num_trials):
-        N = initial_nuclei
+    for _ in range(sampling):
+        N = initial_particles
         time = 0
 
-        while N > 0 and time < time_end:
+        while N > 0 and time < end_time:
             # Random time until next decay
-            time_until_decay = np.random.exponential(1 / LAMBDA)
-            time += time_until_decay
+            time_before_decay = np.random.exponential(1 / Lambda)
+            time += time_before_decay
 
-            # Determine if decay occurs
-            if np.random.rand() < 1 - np.exp(-LAMBDA * time_until_decay):
+            # if decay happens
+            if np.random.rand() < 1 - np.exp(-Lambda * time_until_decay):
                 N -= 1
 
         decay_times.append(time)
 
     return decay_times
 
-# Run the simulation
-decay_times = monte_carlo_tritium_decay(initial_nuclei, time_end, num_trials)
+decay_times = monte_carlo_tritium_decay(initial_particles, end_time, sampling)
 
-# Plot results
-plt.hist(decay_times, bins=30, density=True, alpha=0.7, color='blue')
+plt.hist(decay_times, bins=30, density=True, alpha=0.5, color='lightblue')
 plt.title('Distribution of Decay Times for Tritium')
 plt.xlabel('Time (years)')
 plt.ylabel('Frequency')
