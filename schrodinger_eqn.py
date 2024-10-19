@@ -1,58 +1,74 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.linalg import eigh
 
-#set class as a quantum systems, fufilling class requirement
 class QuantumSystem:
-    def __init__(self, x_min, x_max, num_points, potential):
-        self.x_min = x_min
-        self.x_max = x_max
-        self.num_points = num_points
-        self.potential = potential #potential of tritium - use inifinite potential well
-        self.x = np.linspace(x_min, x_max, num_points) #positon points
-        self.dx = self.x[1] - self.x[0] 
-        self.hbar = 1  # value we're using for a reduced planck's constant
-        self.mass = 3  # Mass of tritium (3H)
+    def __init__(self, x_min, x_max, num_points, bohr_radius, mass, potential=0):
+        self.x_values = np.linspace(x_min, x_max, num_points)  # Range of x values
+        self.dx = self.x_values[1] - self.x_values[0]  # Space step
+        self.bohr_radius = bohr_radius
+        self.mass = mass
+        self.hbar = 1.0545718e-34  # Reduced Planck's constant in J·s
+        self.V = np.full_like(self.x_values, potential, dtype=np.complex128)  # Potential energy as complex array
+        self.psi = self.wave_function(self.x_values).astype(np.complex128)  # Initial wave function as complex
 
-        self.hamiltonian = self._construct_hamiltonian() # set hamiltonian function
+    def wave_function(self, x):
+        sqrt_term = 1 / np.sqrt(np.pi)
+        r = np.abs(x)  # Using absolute value for radial distance
+        return sqrt_term * (1 / self.bohr_radius)**(3/2) * np.exp(-r / self.bohr_radius)
 
-    def _construct_hamiltonian(self):
-        #schrodinger eqn with the mass of tritium, x points, and potential energy
-        potential = np.diag(self.potential(self.x))  # Potential energy of finite square well
-        
-        kinetic_energy = (-self.hbar**2 / (2 * self.mass)) * runga_kutta_wavefunction
-        
-        
-        off_diag = np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), -1) + \
-                   np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1) 
-        return potential + off_diag
+    def normalize(self):
+        norm = np.sqrt(np.sum(np.abs(self.psi)**2) * self.dx)  # Normalization factor
+        self.psi /= norm  # Normalize the wave function
 
-    def solve(self): #solve eigenvalues using SciPy script eigh
-        energies, wavefunctions = eigh(self.hamiltonian)
-        return energies, wavefunctions
+    def second_derivative(self, psi):
+        # Approximate the second derivative using central differences
+        d2_psi = np.zeros_like(psi, dtype=np.complex128)
+        d2_psi[1:-1] = (psi[2:] - 2 * psi[1:-1] + psi[:-2]) / (self.dx**2)
+        return d2_psi
 
-    def plot_wavefunctions(self, wavefunctions):
+    def schrodinger_step(self):
+        # Calculate the second derivative
+        d2_psi = self.second_derivative(self.psi)
+
+        # Calculate k values for the Runge-Kutta method
+        k1 = -1j * (-(self.hbar**2 / (2 * self.mass)) * d2_psi + self.V * self.psi)
+        k2 = -1j * (-(self.hbar**2 / (2 * self.mass)) * self.second_derivative(self.psi + self.dt / 2 * k1) + self.V * (self.psi + self.dt / 2 * k1))
+        k3 = -1j * (-(self.hbar**2 / (2 * self.mass)) * self.second_derivative(self.psi + self.dt / 2 * k2) + self.V * (self.psi + self.dt / 2 * k2))
+        k4 = -1j * (-(self.hbar**2 / (2 * self.mass)) * self.second_derivative(self.psi + self.dt * k3) + self.V * (self.psi + self.dt * k3))
+
+        # Update the wave function
+        self.psi += (self.dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+
+    def simulate(self, num_steps, dt):
+        self.dt = dt  # Set the time step
+        self.normalize()  # Normalize the initial wave function
+
+        for _ in range(num_steps):
+            self.schrodinger_step()  # Update wave function
+
+        self.normalize()  # Normalize the final wave function
+
+    def probability_density(self):
+        return np.abs(self.psi)**2
+
+    def plot_probability_density(self):
         plt.figure(figsize=(10, 6))
-        for i in range(3):  # plotting first three wavefunctions
-            plt.plot(self.x, wavefunctions[:, i]**2, label=f'n={i+1}')
-        plt.title('Probability Density of Wavefunctions')
-        plt.xlabel('Position')
-        plt.ylabel('Probability Density')
+        plt.plot(self.x_values, self.probability_density(), label='Probability Density')
+        plt.title('Normalized Probability Density as a Function of x')
+        plt.xlabel('Position (m)')
+        plt.ylabel('Probability Density (|ψ|²)')
         plt.legend()
         plt.grid()
         plt.show()
 
-# potential for a finite square well
 
-# note for me - cannot use infinite for this function, using 1000 for max of potential well makes it act like an infinite square well
-def potential_function(x):
-    return np.where((x > -1) & (x < 1), 0, 1000)  # finite potential well
+# Constants
+bohr_radius = 5.29177e-11  # Bohr radius in meters
+mass = 9.10938356e-31  # Mass of electron in kg
 
-#solve using classes
-quantum_system = QuantumSystem(x_min=-1.5, x_max=1.5, num_points=1000, potential=potential_function)
-energies, wavefunctions = quantum_system.solve()
+# Create a quantum system and run the simulation
+quantum_system = QuantumSystem(x_min=-5 * bohr_radius, x_max=5 * bohr_radius, num_points=1000, bohr_radius=bohr_radius, mass=mass)
+quantum_system.simulate(num_steps=1000, dt=1e-18)
 
-
-# plot the wavefunctions
-quantum_system.plot_wavefunctions(wavefunctions)
-
+# Plot the probability density
+quantum_system.plot_probability_density()
