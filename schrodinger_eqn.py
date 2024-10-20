@@ -60,7 +60,22 @@ class QuantumSystem:
         plt.legend()
         plt.grid()
         plt.show()
+    def monte_carlo_simulation(self, num_samples, potential_range, num_steps, dt):
+        all_probabilities = []
+        
+        for _ in range(num_samples):
+            # Random potential value within the specified range
+            random_potential = np.random.uniform(*potential_range)
+            self.V = np.full_like(self.x_values, random_potential, dtype=np.complex128)  # Update potential
+            
+            # Reset wave function and simulate
+            self.psi = self.wave_function(self.x_values).astype(np.complex128)
+            self.simulate(num_steps, dt)
 
+            # Store the probability density
+            all_probabilities.append(self.probability_density())
+
+        return np.array(all_probabilities)
 
 # Constants
 bohr_radius = 5.29177e-11  # Bohr radius in meters
