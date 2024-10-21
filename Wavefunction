@@ -59,13 +59,17 @@ class MonteCarloSimulation:
         plt.figure(figsize=(10, 6))
 
         for _ in range(self.num_samples):
+            # Generate a random x value within the specified range
+            random_x = np.random.uniform(self.x0, self.x_end)
             x_values, solution = self.solver.runge_kutta(self.E, np.array([1, 0]), self.x0, self.x_end, self.dx)
 
+            # Find the corresponding psi value for the random x
             psi = solution[:, 0]
             norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
             psi /= norm
 
-            plt.plot(x_values, np.abs(psi)**2, color='blue')
+            # Use the whole wave function for the plot
+            plt.plot(x_values, np.abs(psi)**2, color='blue', alpha=0.1)
 
         # Final plot settings
         plt.title('Monte Carlo Simulation of Wave Function Probability Densities')
@@ -73,7 +77,7 @@ class MonteCarloSimulation:
         plt.ylabel('Probability Density')
         plt.grid()
         plt.show()
-        
+
 
 # Create instances and run the simulation
 potential = Potential()
