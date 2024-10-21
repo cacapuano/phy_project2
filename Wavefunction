@@ -1,19 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Constants
+# constants
 hbar = 1.0  # Planck's constant (J·s)
 m = 3.0  # Electron mass (kg)
 
-# Potential function
+# potential function
 def potentiall(x):
-    if x > 0 and x < 1:
-      V = 0
+    if 0 < x < 1:
+        V = 0
     else:
-      V = 10000000
+        V = 10000000
     return V
 
-# Define the system of first-order ODEs
+# first-order ODEs
 def derivativess(x, y, E):
     psi1 = y[0]
     psi2 = y[1]
@@ -22,8 +22,8 @@ def derivativess(x, y, E):
     dpsi2_dx = (2 * m / hbar**2) * (V - E) * psi1
     return np.array([dpsi1_dx, dpsi2_dx])
 
-# Runge-Kutta 4th order method
-def runge_kutta_4th_orderr(E, y0, x0, x_end, dx):
+# runga-kutta 4th order method
+def runga_kutta_4th_orderr(E, y0, x0, x_end, dx):
     num_steps = int((x_end - x0) / dx) + 1
     x_values = np.linspace(x0, x_end, num_steps)
     y_values = np.zeros((num_steps, len(y0)))
@@ -42,29 +42,37 @@ def runge_kutta_4th_orderr(E, y0, x0, x_end, dx):
 
     return x_values, y_values
 
-# Parameters
-E = 2        # Energy level (Joules) - you can adjust this
-y0 = np.array([1, 0])  # Initial wave function (small amplitude, zero derivative)
-x0 = 0        # Start position (m)
-x_end = 1      # End position (m)
-dx = 0.01        # Step size
+# parameters
+num_samples = 1000  # samples
+x0 = 0        # start position (m)
+x_end = 1      # end position (m)
+dx = 0.01      # step size
+E = 2          # fixed energy 
 
-# Solve the ODE using Runge-Kutta
-x_values, solution = runge_kutta_4th_orderr(E, y0, x0, x_end, dx)
+# parameters for wavefunction
+y0 = np.array([1, 0])  # initial wavefunction as array
 
-# Extract wave function and its derivative
-psi = solution[:, 0]
-
-# Normalize the wave function
-norm = 1.5*np.sqrt(np.trapz(np.abs(psi)**2, x_values))
-psi /= norm
-
-# Plot the results
+# start plot figure
 plt.figure(figsize=(10, 6))
-plt.plot(x_values, np.abs(psi)**2, label='Probability Density', color='blue')
-plt.title('Wave Function Probability Density')
+
+# monte-carlo simulation using random x-values
+for _ in range(num_samples):
+    # random x positions
+    sampled_x = np.random.uniform(x0, x_end)
+
+    # Solve the ODE using runga-Kutta at the sampled position
+    x_values, solution = runga_kutta_4th_orderr(E, y0, x0, x_end, dx)
+
+    # normalize wavefunction
+    psi = solution[:, 0]
+    norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
+    psi /= norm
+
+    plt.plot(x_values, np.abs(psi)**2, color='blue')
+
+# Final plot settings
+plt.title('Monte Carlo Simulation of Wave Function Probability Densities')
 plt.xlabel('Position (m)')
 plt.ylabel('Probability Density')
 plt.grid()
-plt.legend()
 plt.show()
