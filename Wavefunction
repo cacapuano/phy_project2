@@ -73,6 +73,7 @@ class MonteCarloSimulation:
         plt.ylabel('Probability Density')
         plt.grid()
         plt.show()
+        
 
 # Create instances and run the simulation
 potential = Potential()
