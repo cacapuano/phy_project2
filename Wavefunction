@@ -1,78 +1,81 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# constants
+# Constants
 hbar = 1.0  # Planck's constant (J·s)
-m = 3.0  # Electron mass (kg)
+m = 3.0     # Electron mass (kg)
 
-# potential function
-def potentiall(x):
-    if 0 < x < 1:
-        V = 0
-    else:
-        V = 10000000
-    return V
+class Potential:
+    def __init__(self, width=1):
+        self.width = width
 
-# first-order ODEs
-def derivativess(x, y, E):
-    psi1 = y[0]
-    psi2 = y[1]
-    V = potentiall(x)
-    dpsi1_dx = psi2
-    dpsi2_dx = (2 * m / hbar**2) * (V - E) * psi1
-    return np.array([dpsi1_dx, dpsi2_dx])
+    def value(self, x):
+        if 0 < x < self.width:
+            return 0
+        else:
+            return 10000000  # Infinite potential outside the well
 
-# runga-kutta 4th order method
-def runga_kutta_4th_orderr(E, y0, x0, x_end, dx):
-    num_steps = int((x_end - x0) / dx) + 1
-    x_values = np.linspace(x0, x_end, num_steps)
-    y_values = np.zeros((num_steps, len(y0)))
-    y_values[0] = y0
+class WaveFunctionSolver:
+    def __init__(self, potential):
+        self.potential = potential
 
-    for i in range(num_steps - 1):
-        x = x_values[i]
-        y = y_values[i]
+    def derivatives(self, x, y, E):
+        psi1 = y[0]
+        psi2 = y[1]
+        V = self.potential.value(x)
+        dpsi1_dx = psi2
+        dpsi2_dx = (2 * m / hbar**2) * (V - E) * psi1
+        return np.array([dpsi1_dx, dpsi2_dx])
 
-        k1 = dx * derivativess(x, y, E)
-        k2 = dx * derivativess(x + dx / 2, y + k1 / 2, E)
-        k3 = dx * derivativess(x + dx / 2, y + k2 / 2, E)
-        k4 = dx * derivativess(x + dx, y + k3, E)
+    def runge_kutta(self, E, y0, x0, x_end, dx):
+        num_steps = int((x_end - x0) / dx) + 1
+        x_values = np.linspace(x0, x_end, num_steps)
+        y_values = np.zeros((num_steps, len(y0)))
+        y_values[0] = y0
 
-        y_values[i + 1] = y + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+        for i in range(num_steps - 1):
+            x = x_values[i]
+            y = y_values[i]
 
-    return x_values, y_values
+            k1 = dx * self.derivatives(x, y, E)
+            k2 = dx * self.derivatives(x + dx / 2, y + k1 / 2, E)
+            k3 = self.derivatives(x + dx / 2, y + k2 / 2, E) * dx
+            k4 = self.derivatives(x + dx, y + k3, E) * dx
 
-# parameters
-num_samples = 1000  # samples
-x0 = 0        # start position (m)
-x_end = 1      # end position (m)
-dx = 0.01      # step size
-E = 2          # fixed energy 
+            y_values[i + 1] = y + (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
-# parameters for wavefunction
-y0 = np.array([1, 0])  # initial wavefunction as array
+        return x_values, y_values
 
-# start plot figure
-plt.figure(figsize=(10, 6))
+class MonteCarloSimulation:
+    def __init__(self, solver, num_samples=1000, x0=0, x_end=1, dx=0.01, E=2):
+        self.solver = solver
+        self.num_samples = num_samples
+        self.x0 = x0
+        self.x_end = x_end
+        self.dx = dx
+        self.E = E
 
-# monte-carlo simulation using random x-values
-for _ in range(num_samples):
-    # random x positions
-    sampled_x = np.random.uniform(x0, x_end)
+    def run(self):
+        plt.figure(figsize=(10, 6))
 
-    # Solve the ODE using runga-Kutta at the sampled position
-    x_values, solution = runga_kutta_4th_orderr(E, y0, x0, x_end, dx)
+        for _ in range(self.num_samples):
+            x_values, solution = self.solver.runge_kutta(self.E, np.array([1, 0]), self.x0, self.x_end, self.dx)
 
-    # normalize wavefunction
-    psi = solution[:, 0]
-    norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
-    psi /= norm
+            psi = solution[:, 0]
+            norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
+            psi /= norm
 
-    plt.plot(x_values, np.abs(psi)**2, color='blue')
+            plt.plot(x_values, np.abs(psi)**2, color='blue')
 
-# Final plot settings
-plt.title('Monte Carlo Simulation of Wave Function Probability Densities')
-plt.xlabel('Position (m)')
-plt.ylabel('Probability Density')
-plt.grid()
-plt.show()
+        # Final plot settings
+        plt.title('Monte Carlo Simulation of Wave Function Probability Densities')
+        plt.xlabel('Position (m)')
+        plt.ylabel('Probability Density')
+        plt.grid()
+        plt.show()
+
+# Create instances and run the simulation
+potential = Potential()
+solver = WaveFunctionSolver(potential)
+simulation = MonteCarloSimulation(solver)
+simulation.run()
