@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Constants
+# constants
 hbar = 1.0  # Planck's constant (J·s)
 m = 3.0     # Electron mass (kg)
 
@@ -13,7 +13,7 @@ class Potential:
         if 0 < x < self.width:
             return 0
         else:
-            return 10000000  # Infinite potential outside the well
+            return 10000000  # infinite potential outside the well
 
 class WaveFunctionSolver:
     def __init__(self, potential):
@@ -27,7 +27,7 @@ class WaveFunctionSolver:
         dpsi2_dx = (2 * m / hbar**2) * (V - E) * psi1
         return np.array([dpsi1_dx, dpsi2_dx])
 
-    def runge_kutta(self, E, y0, x0, x_end, dx):
+    def runge_kutta(self, E, y0, x0, x_end, dx): #solving second ODE
         num_steps = int((x_end - x0) / dx) + 1
         x_values = np.linspace(x0, x_end, num_steps)
         y_values = np.zeros((num_steps, len(y0)))
@@ -36,6 +36,8 @@ class WaveFunctionSolver:
         for i in range(num_steps - 1):
             x = x_values[i]
             y = y_values[i]
+
+            #runga kutta coefficients
 
             k1 = dx * self.derivatives(x, y, E)
             k2 = dx * self.derivatives(x + dx / 2, y + k1 / 2, E)
@@ -59,19 +61,17 @@ class MonteCarloSimulation:
         plt.figure(figsize=(10, 6))
 
         for _ in range(self.num_samples):
-            # Generate a random x value within the specified range
+            # generate a random x value within the specified range
             random_x = np.random.uniform(self.x0, self.x_end)
             x_values, solution = self.solver.runge_kutta(self.E, np.array([1, 0]), self.x0, self.x_end, self.dx)
 
-            # Find the corresponding psi value for the random x
+            # find the corresponding psi value for the random x
             psi = solution[:, 0]
             norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
             psi /= norm
 
-            # Use the whole wave function for the plot
-            plt.plot(x_values, np.abs(psi)**2 / 2.2, color='blue', alpha=0.1)
+        plt.plot(x_values, np.abs(psi)**2 / 2.2, color='blue', alpha=0.1)
 
-        # Final plot settings
         plt.title('Monte Carlo Simulation of Wave Function Probability Densities')
         plt.xlabel('Position (m)')
         plt.ylabel('Probability Density')
