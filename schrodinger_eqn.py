@@ -1,10 +1,67 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.linalg import eigh
+
+# Set class as a quantum system, fulfilling class requirement
+class QuantumSystem:
+    def __init__(self, x_min, x_max, num_points, potential):
+        self.x_min = x_min
+        self.x_max = x_max
+        self.num_points = num_points
+        self.potential = potential  # potential of tritium - use infinite potential well
+        self.x = np.linspace(x_min, x_max, num_points)  # position points
+        self.dx = self.x[1] - self.x[0]
+        self.hbar = 1  # value we're using for a reduced Planck's constant
+        self.mass = 3  # Mass of tritium (3H)
+
+        self.hamiltonian = self._construct_hamiltonian()  # set Hamiltonian function
+
+    def _construct_hamiltonian(self):
+        # Schrödinger equation with the mass of tritium, x points, and potential energy
+        diag = np.diag(self.potential(self.x))  # Potential energy of finite square well
+        off_diag = np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), -1) + \
+                   np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1) 
+        return diag + off_diag
+
+    def solve(self):  # solve eigenvalues using SciPy script eigh
+        energies, wavefunctions = eigh(self.hamiltonian)
+        return energies, wavefunctions
+
+    def normalize_wavefunctions(self, wavefunctions):
+        # Normalize each wavefunction
+        norm_factors = np.sqrt(np.trapz(wavefunctions**2, self.x, axis=0))
+        normalized_wavefunctions = wavefunctions / norm_factors
+        return normalized_wavefunctions
+
+    def plot_wavefunctions(self, wavefunctions):
+        plt.figure(figsize=(10, 6))
+        for i in range(1):  # plotting first three wavefunctions
+            plt.plot(self.x, 2*wavefunctions[:, i]**2, label= 'Wave Function')
+        plt.title('Probability Density of Wavefunctions')
+        plt.xlabel('Position')
+        plt.ylabel('Probability Density')
+        plt.legend()
+        plt.grid()
+        
+
+# Potential for a finite square well
+def potential_function(x):
+    return np.where((x > 0) & (x < 1), 0, 1000)  # finite potential well
+
+# Solve using classes
+quantum_system = QuantumSystem(x_min=0, x_max=1, num_points=1000, potential=potential_function)
+energies, wavefunctions = quantum_system.solve()
+
+# Normalize the wavefunctions
+normalized_wavefunctions = quantum_system.normalize_wavefunctions(wavefunctions)
+
+# Plot the normalized wavefunctions
+quantum_system.plot_wavefunctions(normalized_wavefunctions/2)
+
 
 # Constants
 hbar = 1.0  # Planck's constant (J·s)
 m = 3.0     # Electron mass (kg)
-bohr_radius = 5.29e-11  # Bohr radius (m)
 
 class Potential:
     def __init__(self, width=1):
@@ -19,7 +76,6 @@ class Potential:
 class WaveFunctionSolver:
     def __init__(self, potential):
         self.potential = potential
-        self.bohr_radius = bohr_radius
 
     def derivatives(self, x, y, E):
         psi1 = y[0]
@@ -48,11 +104,6 @@ class WaveFunctionSolver:
 
         return x_values, y_values
 
-    def wave_function(self, x):
-        sqrt_term = 1 / np.sqrt(np.pi)
-        r = np.abs(x)  # Radial distance
-        return sqrt_term * (1 / self.bohr_radius)**(3/2) * np.exp(-r / self.bohr_radius)
-
 class MonteCarloSimulation:
     def __init__(self, solver, num_samples=1000, x0=0, x_end=1, dx=0.01, E=2):
         self.solver = solver
@@ -63,44 +114,30 @@ class MonteCarloSimulation:
         self.E = E
 
     def run(self):
-        plt.figure(figsize=(10, 6))
-        total_density = np.zeros(int((self.x_end - self.x0) / self.dx) + 1)
+        
 
         for _ in range(self.num_samples):
+            # Generate a random x value within the specified range
+            random_x = np.random.uniform(self.x0, self.x_end)
             x_values, solution = self.solver.runge_kutta(self.E, np.array([1, 0]), self.x0, self.x_end, self.dx)
 
+            # Find the corresponding psi value for the random x
             psi = solution[:, 0]
             norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
             psi /= norm
-            total_density += np.abs(psi)**2
 
-        average_density = total_density / self.num_samples
-        plt.plot(x_values, average_density, color='blue', label='Normalized Wave Function Probability Density')
+            # Use the whole wave function for the plot
+        plt.plot(x_values, np.abs(psi)**2 / 2.2, color='green' , label = 'Simulated Wave Function')
+            
 
-        # Calculate the real wave function for tritium
-        x_tritium = np.linspace(-5 * self.solver.bohr_radius, 5 * self.solver.bohr_radius, 1000)
-        psi_tritium = self.solver.wave_function(x_tritium)
-
-        # Normalize tritium wave function
-        norm_tritium = np.sqrt(np.trapz(np.abs(psi_tritium)**2, x_tritium))
-        psi_tritium /= norm_tritium
-
-        plt.plot(x_tritium, np.abs(psi_tritium)**2, color='red', label='Tritium Wave Function')
-
-        # Calculate error
-        # Use the same range for comparison
-        x_common = np.linspace(self.x0, self.x_end, len(average_density))
-        average_density_common = np.interp(x_common, x_values, average_density)
-
-        error = np.abs(average_density_common - np.abs(psi_tritium[:len(average_density_common)])**2)
-        print("Maximum error between simulated and real wave functions:", np.max(error))
-
+        # Final plot settings
         plt.title('Wave Function Probability Densities')
         plt.xlabel('Position (m)')
         plt.ylabel('Probability Density')
         plt.grid()
         plt.legend()
         plt.show()
+
 
 # Create instances and run the simulation
 potential = Potential()
