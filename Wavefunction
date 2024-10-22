@@ -69,7 +69,7 @@ class MonteCarloSimulation:
             psi /= norm
 
             # Use the whole wave function for the plot
-            plt.plot(x_values, np.abs(psi)**2, color='blue', alpha=0.1)
+            plt.plot(x_values, np.abs(psi)**2 / 2.2, color='blue', alpha=0.1)
 
         # Final plot settings
         plt.title('Monte Carlo Simulation of Wave Function Probability Densities')
