@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import eigh
 
-# Set class as a quantum system, fulfilling class requirement
+# set class as a quantum system, fulfilling class requirement
 class QuantumSystem:
     def __init__(self, x_initial, x_final, num_points, potential):
         self.x_initial = x_initial
