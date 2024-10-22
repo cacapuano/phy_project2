@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import eigh
 
-# set class as a quantum system, fulfilling class requirement
+# Quantum system class definition
 class QuantumSystem:
     def __init__(self, x_initial, x_final, num_points, potential):
         self.x_initial = x_initial
@@ -11,19 +11,27 @@ class QuantumSystem:
         self.potential = potential  # potential of tritium - use infinite potential well
         self.x = np.linspace(x_initial, x_final, num_points)  # position points
         self.dx = self.x[1] - self.x[0]
-        self.hbar = 1  # value we're using for a reduced Planck's constant
+        self.hbar = 1  # reduced Planck's constant
         self.mass = 3  # Mass of tritium (3H)
 
         self.hamiltonian = self._construct_hamiltonian()  # set Hamiltonian function
 
     def _construct_hamiltonian(self):
-        # Schrödinger equation with the mass of tritium, x points, and potential energy
-        d_potential = np.d_potential(self.potential(self.x))  # Potential energy of finite square well
-        off_d_potential = np.d_potential([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), -1) + \
-                   np.d_potential([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1) 
-        return d_potential + off_d_potential
+        # Kinetic energy term
+        diagonal = np.diag([-2 * self.hbar**2 / (self.mass * self.dx**2)] * self.num_points)
+        
+        # Potential energy term
+        potential_energy = self.potential(self.x)
+        potential_matrix = np.diag(potential_energy)
 
-    def solve(self):  # solve eigenvalues using SciPy script eigh
+        # Off-diagonal terms for kinetic energy
+        off_diagonal = np.diag([self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), k=1) + \
+                       np.diag([self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), k=-1)
+
+        return diagonal + potential_matrix + off_diagonal
+
+    def solve(self):
+        # Solve eigenvalues using SciPy's eigh
         energies, wavefunctions = eigh(self.hamiltonian)
         return energies, wavefunctions
 
@@ -36,7 +44,7 @@ class QuantumSystem:
     def plot_wavefunctions(self, wavefunctions):
         plt.figure(figsize=(10, 6))
         for i in range(1):  # plotting first three wavefunctions
-            plt.plot(self.x, 2*wavefunctions[:, i]**2, label= 'Wave Function')
+            plt.plot(self.x, wavefunctions[:, i]**2 / 2, label = 'Actual Wave Function')
         plt.title('Probability Density of Wavefunctions')
         plt.xlabel('Position')
         plt.ylabel('Probability Density')
@@ -44,32 +52,29 @@ class QuantumSystem:
         plt.grid()
         
 
-# potential for a (in)finite square well
+# Potential function for a finite square well
 def potential_function(x):
     return np.where((x > 0) & (x < 1), 0, 1000)  # finite potential well
 
-# solve using classes
+# Solve using the QuantumSystem class
 quantum_system = QuantumSystem(x_initial=0, x_final=1, num_points=1000, potential=potential_function)
 energies, wavefunctions = quantum_system.solve()
 
-# normalize 
+# Normalize wavefunctions
 normalized_wavefunctions = quantum_system.normalize_wavefunctions(wavefunctions)
-quantum_system.plot_wavefunctions(normalized_wavefunctions/2)
+quantum_system.plot_wavefunctions(normalized_wavefunctions)
 
+# Constants for the infinite potential well case
+hbar = 1.0  # Planck's constant (J·s)
+m = 3.0     # Tritium mass (kg)
 
-# Constants
-hbar = 1.0  # planck's constant (J·s)
-m = 3.0     # tritium mass (kg)
-
-class Potential: #potential function of infinite square well
+class Potential:
+    # Potential function for an infinite square well
     def __init__(self, width=1):
         self.width = width
 
     def value(self, x):
-        if 0 < x < self.width:
-            return 0
-        else:
-            return 10000000  # infinite potential outside the well
+        return np.where((x > 0) & (x < self.width), 0, 1e7)  # infinite potential outside the well
 
 class WaveFunctionSolver:
     def __init__(self, potential):
@@ -83,7 +88,7 @@ class WaveFunctionSolver:
         dpsi2_dx = (2 * m / hbar**2) * (V - E) * psi1
         return np.array([dpsi1_dx, dpsi2_dx])
 
-    def runge_kutta(self, E, y0, x0, x_end, dx): #runga-kutta for solving ODE
+    def runge_kutta(self, E, y0, x0, x_end, dx):
         num_steps = int((x_end - x0) / dx) + 1
         x_values = np.linspace(x0, x_end, num_steps)
         y_values = np.zeros((num_steps, len(y0)))
@@ -95,14 +100,14 @@ class WaveFunctionSolver:
 
             k1 = dx * self.derivatives(x, y, E)
             k2 = dx * self.derivatives(x + dx / 2, y + k1 / 2, E)
-            k3 = self.derivatives(x + dx / 2, y + k2 / 2, E) * dx
-            k4 = self.derivatives(x + dx, y + k3, E) * dx
+            k3 = dx * self.derivatives(x + dx / 2, y + k2 / 2, E)
+            k4 = dx * self.derivatives(x + dx, y + k3, E)
 
             y_values[i + 1] = y + (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
         return x_values, y_values
 
-class MonteCarloSimulation: #monte-carlo simulation
+class MonteCarloSimulation:
     def __init__(self, solver, num_samples=1000, x0=0, x_end=1, dx=0.01, E=2):
         self.solver = solver
         self.num_samples = num_samples
@@ -112,29 +117,23 @@ class MonteCarloSimulation: #monte-carlo simulation
         self.E = E
 
     def run(self):
+        # Generate and plot wave functions
         
-
         for _ in range(self.num_samples):
-            # generate a random x values
-            random_x = np.random.uniform(self.x0, self.x_end)
             x_values, solution = self.solver.runge_kutta(self.E, np.array([1, 0]), self.x0, self.x_end, self.dx)
-
-            # find the psi value for the random x
             psi = solution[:, 0]
             norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
             psi /= norm
+        plt.plot(x_values, np.abs(psi)**2 /2, color='green', label = 'Simulated Wave Function')
 
-           
-        plt.plot(x_values, np.abs(psi)**2 / 2.2, color='green' , label = 'Simulated Wave Function')
-        plt.title('Wave Function Probability Densities')
+        plt.title('Wave Function Probability Densities (Monte Carlo Simulation)')
         plt.xlabel('Position (m)')
         plt.ylabel('Probability Density')
-        plt.grid()
         plt.legend()
+        plt.grid()
         plt.show()
 
-
-# create instances and run the simulation
+# Create instances and run the simulation
 potential = Potential()
 solver = WaveFunctionSolver(potential)
 simulation = MonteCarloSimulation(solver)
