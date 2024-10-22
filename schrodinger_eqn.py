@@ -2,14 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import eigh
 
-# Set class as a quantum system, fulfilling class requirement
+# set class as a quantum system, fulfilling class requirement
 class QuantumSystem:
-    def __init__(self, x_min, x_max, num_points, potential):
-        self.x_min = x_min
-        self.x_max = x_max
+    def __init__(self, x_initial, x_final, num_points, potential):
+        self.x_initial = x_initial
+        self.x_final = x_final
         self.num_points = num_points
         self.potential = potential  # potential of tritium - use infinite potential well
-        self.x = np.linspace(x_min, x_max, num_points)  # position points
+        self.x = np.linspace(x_initial, x_final, num_points)  # position points
         self.dx = self.x[1] - self.x[0]
         self.hbar = 1  # value we're using for a reduced Planck's constant
         self.mass = 3  # Mass of tritium (3H)
@@ -18,10 +18,10 @@ class QuantumSystem:
 
     def _construct_hamiltonian(self):
         # Schrödinger equation with the mass of tritium, x points, and potential energy
-        diag = np.diag(self.potential(self.x))  # Potential energy of finite square well
-        off_diag = np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), -1) + \
-                   np.diag([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1) 
-        return diag + off_diag
+        d_potential = np.d_potential(self.potential(self.x))  # Potential energy of finite square well
+        off_d_potential = np.d_potential([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), -1) + \
+                   np.d_potential([-self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), 1) 
+        return d_potential + off_d_potential
 
     def solve(self):  # solve eigenvalues using SciPy script eigh
         energies, wavefunctions = eigh(self.hamiltonian)
@@ -44,26 +44,24 @@ class QuantumSystem:
         plt.grid()
         
 
-# Potential for a finite square well
+# potential for a (in)finite square well
 def potential_function(x):
     return np.where((x > 0) & (x < 1), 0, 1000)  # finite potential well
 
-# Solve using classes
-quantum_system = QuantumSystem(x_min=0, x_max=1, num_points=1000, potential=potential_function)
+# solve using classes
+quantum_system = QuantumSystem(x_initial=0, x_final=1, num_points=1000, potential=potential_function)
 energies, wavefunctions = quantum_system.solve()
 
-# Normalize the wavefunctions
+# normalize 
 normalized_wavefunctions = quantum_system.normalize_wavefunctions(wavefunctions)
-
-# Plot the normalized wavefunctions
 quantum_system.plot_wavefunctions(normalized_wavefunctions/2)
 
 
 # Constants
-hbar = 1.0  # Planck's constant (J·s)
-m = 3.0     # Electron mass (kg)
+hbar = 1.0  # planck's constant (J·s)
+m = 3.0     # tritium mass (kg)
 
-class Potential:
+class Potential: #potential function of infinite square well
     def __init__(self, width=1):
         self.width = width
 
@@ -71,7 +69,7 @@ class Potential:
         if 0 < x < self.width:
             return 0
         else:
-            return 10000000  # Infinite potential outside the well
+            return 10000000  # infinite potential outside the well
 
 class WaveFunctionSolver:
     def __init__(self, potential):
@@ -85,7 +83,7 @@ class WaveFunctionSolver:
         dpsi2_dx = (2 * m / hbar**2) * (V - E) * psi1
         return np.array([dpsi1_dx, dpsi2_dx])
 
-    def runge_kutta(self, E, y0, x0, x_end, dx):
+    def runge_kutta(self, E, y0, x0, x_end, dx): #runga-kutta for solving ODE
         num_steps = int((x_end - x0) / dx) + 1
         x_values = np.linspace(x0, x_end, num_steps)
         y_values = np.zeros((num_steps, len(y0)))
@@ -104,7 +102,7 @@ class WaveFunctionSolver:
 
         return x_values, y_values
 
-class MonteCarloSimulation:
+class MonteCarloSimulation: #monte-carlo simulation
     def __init__(self, solver, num_samples=1000, x0=0, x_end=1, dx=0.01, E=2):
         self.solver = solver
         self.num_samples = num_samples
@@ -117,20 +115,17 @@ class MonteCarloSimulation:
         
 
         for _ in range(self.num_samples):
-            # Generate a random x value within the specified range
+            # generate a random x values
             random_x = np.random.uniform(self.x0, self.x_end)
             x_values, solution = self.solver.runge_kutta(self.E, np.array([1, 0]), self.x0, self.x_end, self.dx)
 
-            # Find the corresponding psi value for the random x
+            # find the psi value for the random x
             psi = solution[:, 0]
             norm = np.sqrt(np.trapz(np.abs(psi)**2, x_values))
             psi /= norm
 
-            # Use the whole wave function for the plot
+           
         plt.plot(x_values, np.abs(psi)**2 / 2.2, color='green' , label = 'Simulated Wave Function')
-            
-
-        # Final plot settings
         plt.title('Wave Function Probability Densities')
         plt.xlabel('Position (m)')
         plt.ylabel('Probability Density')
@@ -139,7 +134,7 @@ class MonteCarloSimulation:
         plt.show()
 
 
-# Create instances and run the simulation
+# create instances and run the simulation
 potential = Potential()
 solver = WaveFunctionSolver(potential)
 simulation = MonteCarloSimulation(solver)
