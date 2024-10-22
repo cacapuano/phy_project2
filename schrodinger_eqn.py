@@ -17,26 +17,22 @@ class QuantumSystem:
         self.hamiltonian = self._construct_hamiltonian()  # set Hamiltonian function
 
     def _construct_hamiltonian(self):
-        # Kinetic energy term
+        # matrix
         diagonal = np.diag([-2 * self.hbar**2 / (self.mass * self.dx**2)] * self.num_points)
-        
-        # Potential energy term
         potential_energy = self.potential(self.x)
         potential_matrix = np.diag(potential_energy)
-
-        # Off-diagonal terms for kinetic energy
         off_diagonal = np.diag([self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), k=1) + \
                        np.diag([self.hbar**2 / (2 * self.mass * self.dx**2)] * (self.num_points - 1), k=-1)
 
         return diagonal + potential_matrix + off_diagonal
 
     def solve(self):
-        # Solve eigenvalues using SciPy's eigh
+        # solve eigenvalues using SciPy's eigh
         energies, wavefunctions = eigh(self.hamiltonian)
         return energies, wavefunctions
 
     def normalize_wavefunctions(self, wavefunctions):
-        # Normalize each wavefunction
+        # normalize each wavefunction
         norm_factors = np.sqrt(np.trapz(wavefunctions**2, self.x, axis=0))
         normalized_wavefunctions = wavefunctions / norm_factors
         return normalized_wavefunctions
@@ -52,24 +48,24 @@ class QuantumSystem:
         plt.grid()
         
 
-# Potential function for a finite square well
+# potential function for a finite square well
 def potential_function(x):
     return np.where((x > 0) & (x < 1), 0, 1000)  # finite potential well
 
-# Solve using the QuantumSystem class
+# solve 
 quantum_system = QuantumSystem(x_initial=0, x_final=1, num_points=1000, potential=potential_function)
 energies, wavefunctions = quantum_system.solve()
 
-# Normalize wavefunctions
+# normalize wavefunctions
 normalized_wavefunctions = quantum_system.normalize_wavefunctions(wavefunctions)
 quantum_system.plot_wavefunctions(normalized_wavefunctions)
 
-# Constants for the infinite potential well case
-hbar = 1.0  # Planck's constant (J·s)
-m = 3.0     # Tritium mass (kg)
+# constants for the infinite potential well case
+hbar = 1.0  # planck's constant (J·s)
+m = 3.0     # tritium mass (kg)
 
 class Potential:
-    # Potential function for an infinite square well
+    # potential function for an infinite square well
     def __init__(self, width=1):
         self.width = width
 
@@ -117,7 +113,6 @@ class MonteCarloSimulation:
         self.E = E
 
     def run(self):
-        # Generate and plot wave functions
         
         for _ in range(self.num_samples):
             x_values, solution = self.solver.runge_kutta(self.E, np.array([1, 0]), self.x0, self.x_end, self.dx)
@@ -133,7 +128,6 @@ class MonteCarloSimulation:
         plt.grid()
         plt.show()
 
-# Create instances and run the simulation
 potential = Potential()
 solver = WaveFunctionSolver(potential)
 simulation = MonteCarloSimulation(solver)
