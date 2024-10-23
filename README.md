@@ -22,7 +22,7 @@ to our knowledge of quantum mechanics.
 - Feature 2: The center point (x = 0.5) is where you mostly likely will find tritium. 
 - Feature 3: There is a small shift from simulated plot and the actual plot. 
 
-1. Package is schrodinger_eqn
+1. Package is schrodinger_eqn, and wavefunction
 2. To get our simulated probability density plot, run python Wavefuction.py
 3. To get our comparison of the acual and simulated probability density plots, run python schrodinger_eqn.py
 4. To run the error plot, run python error_plot
