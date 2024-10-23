@@ -1,9 +1,0 @@
-Metadata-Version: 2.1
-Name: ODE-solutino-for-tritum-wavefunction
-Version: 0.1
-Summary: solve schrodinger eqn to get tritum wavefunction
-Author: Caroline and Jasmine
-Author-email: cecapuan@syr.edu, yhuan223@syr.edu
-Requires-Dist: numpy
-Requires-Dist: matplotlib
-Requires-Dist: scipy
