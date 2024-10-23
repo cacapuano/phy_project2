@@ -1,0 +1,9 @@
+README.md
+setup.py
+ODE_solutino_for_tritum_wavefunction.egg-info/PKG-INFO
+ODE_solutino_for_tritum_wavefunction.egg-info/SOURCES.txt
+ODE_solutino_for_tritum_wavefunction.egg-info/dependency_links.txt
+ODE_solutino_for_tritum_wavefunction.egg-info/requires.txt
+ODE_solutino_for_tritum_wavefunction.egg-info/top_level.txt
+schrodinger_eqn/ODE_solution.py
+schrodinger_eqn/__init__.py
